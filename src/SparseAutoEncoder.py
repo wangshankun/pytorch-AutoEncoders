@@ -11,6 +11,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 from common.datas import get_mnist_loader
+import torch.nn.functional as F
 
 import os
 import time
@@ -23,20 +24,9 @@ in_dim = 784
 hidden_size = 30
 expect_tho = 0.05
 
-
-def KL_devergence(p, q):
-    """
-    Calculate the KL-divergence of (p,q)
-    :param p:
-    :param q:
-    :return:
-    """
-    q = torch.nn.functional.softmax(q, dim=0)
-    q = torch.sum(q, dim=0)/batch_size  # dim:缩减的维度,q的第一维是batch维,即大小为batch_size大小,此处是将第j个神经元在batch_size个输入下所有的输出取平均
-    s1 = torch.sum(p*torch.log(p/q))
-    s2 = torch.sum((1-p)*torch.log((1-p)/(1-q)))
-    return s1+s2
-
+def KL_devergence(probs, target, temp = 1):
+    lossfunc = nn.KLDivLoss(reduction='batchmean')
+    return lossfunc(F.log_softmax(probs / temp, dim=-1), F.softmax(target / temp, dim=-1))
 
 class AutoEncoder(nn.Module):
     def __init__(self, in_dim=784, hidden_size=30, out_dim=784):
@@ -70,10 +60,6 @@ if torch.cuda.is_available():
     tho_tensor = tho_tensor.cuda()
 _beta = 3
 
-# def kl_1(p, q):
-#     p = torch.nn.functional.softmax(p, dim=-1)
-#     _kl = torch.sum(p*(torch.log_softmax(p,dim=-1)) - torch.nn.functional.log_softmax(q, dim=-1),1)
-#     return torch.mean(_kl)
 
 for epoch in range(num_epochs):
     time_epoch_start = time.time()
@@ -93,4 +79,8 @@ for epoch in range(num_epochs):
         loss.backward()
         Optimizer.step()
 
-        print('Epoch: {}, Loss: {:.4f}, Time: {:.2f}'.format(epoch + 1, loss, time.time() - time_epoch_start))
+        if (batch_index + 1) % 100 == 0:
+            print('Epoch {}/{}, Iter {}/{}, loss: {:.4f}, time: {:.2f}s'.format(
+                epoch + 1, num_epochs, (batch_index + 1), len(train_loader), loss, time.time() - time_epoch_start
+            ))
+
