@@ -4,16 +4,16 @@ import torchvision
 from torchvision.datasets import MNIST
 
 
-def get_mnist_loader(batch_size=100, shuffle=True):
+def get_mnist_loader(batch_size=100, shuffle=True, root_path="../data"):
     """
 
     :return: train_loader, test_loader
     """
-    train_dataset = MNIST(root='../data',
+    train_dataset = MNIST(root_path,
                           train=True,
                           transform=torchvision.transforms.ToTensor(),
                           download=True)
-    test_dataset = MNIST(root='../data',
+    test_dataset = MNIST(root_path,
                          train=False,
                          transform=torchvision.transforms.ToTensor(),
                          download=True)
