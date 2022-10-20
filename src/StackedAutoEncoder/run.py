@@ -27,8 +27,8 @@ def train_layers(layers_list=None, layer=None, epoch=None, validate=True):
     if torch.cuda.is_available():
         for model in layers_list:
             model.cuda()
-    train_loader, test_loader = get_mnist_loader(batch_size=batch_size, shuffle=True)
-    optimizer = optim.SGD(layers_list[layer].parameters(), lr=0.001)
+    train_loader, test_loader = get_mnist_loader(batch_size=batch_size, shuffle=True, root_path="../../data")
+    optimizer = optim.Adam(layers_list[layer].parameters(), lr=0.001)
     criterion = BCELoss()
 
     # train
@@ -60,7 +60,7 @@ def train_layers(layers_list=None, layer=None, epoch=None, validate=True):
             sum_loss += loss
             loss.backward()
             optimizer.step()
-            if (batch_index + 1) % 10 == 0:
+            if (batch_index + 1) % 100 == 0:
                 print("Train Layer: {}, Epoch: {}/{}, Iter: {}/{}, Loss: {:.4f}".format(
                     layer, (epoch_index + 1), epoch, (batch_index + 1), len(train_loader), loss
                 ))
@@ -78,8 +78,8 @@ def train_whole(model=None, epoch=50, validate=True):
     for param in model.parameters():
         param.require_grad = True
 
-    train_loader, test_loader = get_mnist_loader(batch_size=batch_size, shuffle=shuffle)
-    optimizer = optim.SGD(model.parameters(), lr=0.001)
+    train_loader, test_loader = get_mnist_loader(batch_size=batch_size, shuffle=True, root_path="../../data")
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
     # criterion = BCELoss()
     criterion = torch.nn.MSELoss()
 
@@ -103,7 +103,7 @@ def train_whole(model=None, epoch=50, validate=True):
             loss.backward()
             optimizer.step()
 
-            if (batch_index + 1) % 10 == 0:
+            if (batch_index + 1) % 100 == 0:
                 print("Train Whole, Epoch: {}/{}, Iter: {}/{}, Loss: {:.4f}".format(
                     (epoch_index + 1), epoch, (batch_index + 1), len(train_loader), loss
                 ))
