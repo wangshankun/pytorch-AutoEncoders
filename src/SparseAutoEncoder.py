@@ -19,10 +19,11 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 batch_size = 100
-num_epochs = 50
+num_epochs = 30
 in_dim = 784
-hidden_size = 30
 expect_tho = 0.05
+#虽然稀疏增加了鲁棒性，但稀疏会导致隐藏层个数不够容纳整个特征，因此隐藏层需要适当扩大节点数量；
+hidden_size = int(30 / expect_tho)
 
 def KL_devergence(probs, target, temp = 1):
     lossfunc = nn.KLDivLoss(reduction='batchmean')
@@ -47,6 +48,14 @@ class AutoEncoder(nn.Module):
 
 
 train_loader, test_loader = get_mnist_loader(batch_size=batch_size, shuffle=True)
+testdata_iter = iter(test_loader)
+test_images, _ = next(testdata_iter)
+if torch.cuda.is_available():
+    test_images = test_images.cuda()
+torchvision.utils.save_image(test_images, './data/origin_test_images.png')
+image_real = Image.open('./data/origin_test_images.png')
+
+
 autoEncoder = AutoEncoder(in_dim=in_dim, hidden_size=hidden_size, out_dim=in_dim)
 if torch.cuda.is_available():
     autoEncoder.cuda()  # 注:将模型放到GPU上,因此后续传入的数据必须也在GPU上
@@ -83,4 +92,8 @@ for epoch in range(num_epochs):
             print('Epoch {}/{}, Iter {}/{}, loss: {:.4f}, time: {:.2f}s'.format(
                 epoch + 1, num_epochs, (batch_index + 1), len(train_loader), loss, time.time() - time_epoch_start
             ))
+    _, val_out = autoEncoder(test_images.view(test_images.size(0), -1).cuda())
+    val_out = val_out.view(test_images.size(0), 1, 28, 28)
+    filename = './data/reconstruct_sae_images_{}.png'.format(epoch + 1)
+    torchvision.utils.save_image(val_out, filename)
 
